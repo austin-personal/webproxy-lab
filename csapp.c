@@ -1000,16 +1000,19 @@ int open_listenfd(char *port)
     int listenfd, rc, optval=1;
 
     /* Get a list of potential server addresses */
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_socktype = SOCK_STREAM;             /* Accept connections */
-    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG; /* ... on any IP address */
-    hints.ai_flags |= AI_NUMERICSERV;            /* ... using port number */
+    //hints 구조체를 설정하여 getaddrinfo 함수에 사용할 옵션을 정의
+    memset(&hints, 0, sizeof(struct addrinfo)); // hints 구조체의 모든 바이트를 0으로 설정하여 초기화
+    hints.ai_socktype = SOCK_STREAM;             //TCP 연결로 설정
+    hints.ai_flags = AI_PASSIVE | AI_ADDRCONFIG; //서버가 모든 IP 주소에서 연결을 수신할 수 있도록 설정
+    hints.ai_flags |= AI_NUMERICSERV;            // 포트 번호를 문자열이 아닌 숫자로 지정
+    //getaddrinfo를 호출하여 포트에 대한 주소 정보 목록을 가져온다
     if ((rc = getaddrinfo(NULL, port, &hints, &listp)) != 0) {
         fprintf(stderr, "getaddrinfo failed (port %s): %s\n", port, gai_strerror(rc));
         return -2;
     }
 
     /* Walk the list for one that we can bind to */
+    // listp를 순회하며 적절한 소켓 주소 정보를 찾아 소켓을 생성
     for (p = listp; p; p = p->ai_next) {
         /* Create a socket descriptor */
         if ((listenfd = socket(p->ai_family, p->ai_socktype, p->ai_protocol)) < 0) 
@@ -1017,12 +1020,13 @@ int open_listenfd(char *port)
 
         /* Eliminates "Address already in use" error from bind */
         setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR,    //line:netp:csapp:setsockopt
+        //setsockopt: SO_REUSEADDR 옵션을 설정하여 소켓 주소 재사용 문제를 방지
                    (const void *)&optval , sizeof(int));
 
         /* Bind the descriptor to the address */
-        if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0)
+        if (bind(listenfd, p->ai_addr, p->ai_addrlen) == 0)// bind: 소켓을 특정 주소와 포트에 바인딩
             break; /* Success */
-        if (close(listenfd) < 0) { /* Bind failed, try the next */
+        if (close(listenfd) < 0) { /* Bind failed, try the next */ // 바인딩이 실패하면 열린 소켓을 닫고 다음 주소를 시도
             fprintf(stderr, "open_listenfd close failed: %s\n", strerror(errno));
             return -1;
         }
@@ -1030,12 +1034,12 @@ int open_listenfd(char *port)
 
 
     /* Clean up */
-    freeaddrinfo(listp);
+    freeaddrinfo(listp); // getaddrinfo로 얻은 메모리를 해제합니다.
     if (!p) /* No address worked */
         return -1;
 
     /* Make it a listening socket ready to accept connection requests */
-    if (listen(listenfd, LISTENQ) < 0) {
+    if (listen(listenfd, LISTENQ) < 0) { // : 소켓을 리슨 모드로 설정하여 클라이언트의 연결 요청을 수신할 준비. LISTENQ는 최대 대기 큐의 길이로 설정
         close(listenfd);
 	return -1;
     }

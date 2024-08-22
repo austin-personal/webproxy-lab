@@ -4,6 +4,9 @@
 # Student Source Files
 ####################################################################
 
+
+현쟈 동영상이 삭제되어 에러가 뜰것임 동영상 설정 다시해야함. 
+
 This directory contains the files you will need for the CS:APP Proxy
 Lab.
 
